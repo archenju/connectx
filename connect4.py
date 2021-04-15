@@ -1,4 +1,4 @@
-from players import Human, ComputerRand, ComputerDef, ComputerAI
+from players import Human, ComputerRand, ComputerDef, PlayerDQN
 from gameboard import Board
 from gamerules import Checker
 import argparse
@@ -8,7 +8,7 @@ class Connect4:
     def __init__(self):
         self.col = -1
         self.board = -1
-        self.checkre = -1
+        self.checker = -1
         self.player1 = -1
         self.player2 = -1
         self.repeat = 1
@@ -41,14 +41,14 @@ class Connect4:
             self.player2 = Human(-1, self.board, self.checker)
         elif args.mode == "hxr":
             self.player1 = Human(1, self.board, self.checker)
-            self.player2 = ComputerAI(-1, self.board, self.checker)
+            self.player2 = ComputerDef(-1, self.board, self.checker)
         elif args.mode == "rxh":
-            self.player1 = ComputerAI(1, self.board, self.checker)
+            self.player1 = ComputerDef(1, self.board, self.checker)
             self.player2 = Human(-1, self.board, self.checker)
             pass
         else:
             self.player1 = ComputerRand(1, self.board, self.checker)
-            self.player2 = ComputerAI(-1, self.board, self.checker)
+            self.player2 = PlayerDQN(-1, self.board, self.checker,self.repeat)
 
             
     def startgame(self):
@@ -59,14 +59,14 @@ class Connect4:
             
             while self.board.keepplaying:
                 print("Player 1")
-                self.player1.play()
+                self.player1.play(self.repeat)
                 self.board.display()
                 if self.board.keepplaying:
                     print("Player 2")
-                    self.player2.play()
+                    self.player2.play(self.repeat)
                     self.board.display()
-            self.player1.savestate()
-            self.player2.savestate()
+            #self.player1.savestate()
+            #self.player2.savestate()
             print("Repeating", self.repeat, "times")
  
 
