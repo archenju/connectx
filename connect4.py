@@ -51,19 +51,29 @@ class Connect4:
 
             
     def startgame(self):
+        e = -1
         while self.repeat > 0:
             print("Repeat left: ", self.repeat)
             self.repeat = self.repeat - 1
+            e = e+1
             self.board.reset()
             
             while self.board.keepplaying:
                 print("Player 1")
-                self.player1.play(self.repeat)
+                self.player1.play(e)
                 self.board.display()
                 if self.board.keepplaying:
                     print("Player 2")
-                    self.player2.play(self.repeat)
+                    self.player2.play(e)
                     self.board.display()
+                else:
+                    if self.board.winner ==1:
+                        self.player2.send_reward(-1)
+
+            if self.board.winner == -1:
+                self.player1.send_reward(-1)
+                         ##############
+
             #self.player1.savestate()
             #self.player2.savestate()
             print("Repeating", self.repeat, "times")

@@ -14,8 +14,10 @@ class Checker:
         if score > 3:
             reward = 1
             if player == 1:
+                self.board.winner = 1
                 print("Player 1 wins")
             else:
+                self.board.winner = -1
                 print("Player 2 wins")
             self.board.keepplaying = False
             #return True

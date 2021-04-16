@@ -25,6 +25,9 @@ class Player(ABC):
     @abstractmethod
     def play(self,e) -> int:
         pass
+    
+    def send_reward(self,reward):
+        pass
 
 
 class Human(Player):
@@ -88,10 +91,12 @@ class PlayerDQN(Player):
         self.dqnagent = DQNAgent(self.board.cols*self.board.rows,self.board.cols,repeat)
         if os.path.isfile("./connectX-weights_deep.h5"):
             self.dqnagent.load("./connectX-weights_deep.h5") # load prelearned weights
-        self.batch_size = 40
+        self.batch_size = 10
         self.total_rewards = 0
         self.all_total_rewards = np.empty(repeat)
         self.all_avg_rewards = np.empty(repeat)
+        self.previous = None
+        self.previous_action = None
         #self.dqnagent = DQNAgent(42,7,1)
 
 
@@ -99,25 +104,31 @@ class PlayerDQN(Player):
         
         previous_state = self.board.grid.copy()
         action = self.dqnagent.act(self.board.grid)
+        self.previous_action = action
         row = self.board.insert(action, self.id)
         if row != -1:
             (next_state,reward,done)= self.checker.check4win(self.id, row, action)
-
+            self.previous = next_state.copy()
             self.dqnagent.memorize(previous_state, action, reward, next_state,done)
             self.total_rewards += reward
 
             if len(self.dqnagent.memory) > self.batch_size:
                 self.dqnagent.replay(self.batch_size)
                 self.all_total_rewards[e] = self.total_rewards
-                avg_reward = self.all_total_rewards[max(0, e - 3):e].mean()
+                avg_reward = self.all_total_rewards[max(0, e - 5):e].mean()
                 self.all_avg_rewards[e] = avg_reward
-                if e % 3 == 0 :
+                if e % 5 == 0 :
                     self.dqnagent.save("./connectX-weights_deep.h5")
                     print("episode: {}/{}, epsilon: {:.2f}, average: {:.2f}".format(e, self.dqnagent.episodes, self.dqnagent.epsilon, avg_reward))
+                    self.dqnagent.memory.clear()
+                    self.dqnagent.load("./connectX-weights_deep.h5")
 
         else:
             self.play(e) #Invalid column selected, try again
 
+    def send_reward(self,reward):
+            self.dqnagent.memorize(self.previous, self.previous_action, reward, self.board.grid,True)
+            self.total_rewards += reward
 
 # Deep Q-learning Agent
 class DQNAgent:

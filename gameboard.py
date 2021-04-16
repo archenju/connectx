@@ -8,6 +8,7 @@ class Board():
         self.cols = columns
         self.maxturns = self.rows * self.cols
         self.grid = np.zeros(shape=(self.rows, self.cols), dtype=int)
+        self.winner = 0
         #print(self.grid)
         #print("Board created")
     
