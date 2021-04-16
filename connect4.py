@@ -45,7 +45,6 @@ class Connect4:
         elif args.mode == "rxh":
             self.player1 = ComputerDef(1, self.board, self.checker)
             self.player2 = Human(-1, self.board, self.checker)
-            pass
         else:
             self.player1 = ComputerRand(1, self.board, self.checker)
             self.player2 = PlayerDQN(-1, self.board, self.checker,self.repeat)

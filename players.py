@@ -113,7 +113,7 @@ class PlayerDQN(Player):
                 self.all_avg_rewards[e] = avg_reward
                 if e % 3 == 0 :
                     self.dqnagent.save("./connectX-weights_deep.h5")
-                    #print("episode: {}/{}, epsilon: {:.2f}, average: {:.2f}".format(e, episodes, agent.epsilon, avg_reward))
+                    print("episode: {}/{}, epsilon: {:.2f}, average: {:.2f}".format(e, self.dqnagent.episodes, self.dqnagent.epsilon, avg_reward))
 
         else:
             self.play(e) #Invalid column selected, try again
@@ -131,6 +131,7 @@ class DQNAgent:
         self.epsilon_min = 0.01
         self.epsilon_decay = exp((log(self.epsilon_min) - log(self.epsilon))/(0.8*episodes)) # reaches epsilon_min after 80% of iterations
         self.model = self._build_model()
+        self.episodes = episodes
     
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
