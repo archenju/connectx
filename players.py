@@ -14,15 +14,19 @@ from keras.optimizers import Adam
 
 from collections import deque
 from math import exp, log
+import os.path
 
 class Player(ABC):
-    def __init__(self, playernum: int, board: Board, checker: Checker):
+    def __init__(self, playernum: int, board: Board, checker: Checker,repeat:int=1):
         self.id = playernum
         self.board = board
         self.checker = checker
     
     @abstractmethod
-    def play(self) -> int:
+    def play(self,e) -> int:
+        pass
+    
+    def send_reward(self,reward):
         pass
 
 
@@ -30,42 +34,42 @@ class Human(Player):
     def __init__(self, playernum: int, board: Board, checker: Checker):
         super().__init__(playernum, board, checker)
       
-    def play(self) -> int:
+    def play(self,e) -> int:
         col = int( input("Column: ") ) -1
         row = self.board.insert(col, self.id)
         if row != -1:
             return self.checker.check4win(self.id, row, col)
         else:
             print("Wrong column")
-            self.play()
+            self.play(e)
 
 
 class ComputerRand(Player):
     def __init__(self, playernum: int, board: Board, checker: Checker):
         super().__init__(playernum, board, checker)
 
-    def play(self) -> int:
+    def play(self,e) -> int:
         col = random.randint(0, self.board.cols -1)
         row = self.board.insert(col, self.id)
         if row != -1:
             return self.checker.check4win(self.id, row, col)
         else:
-            self.play() #Invalid column selected, try again
+            self.play(e) #Invalid column selected, try again
             
 
 class ComputerDef(Player): #Defensive IA player
     def __init__(self, playernum: int, board: Board, checker: Checker):
         super().__init__(playernum, board, checker)
       
-    def play(self) -> int:
+    def play(self,e) -> int:
         maxscore = 0
         selectedcolumn = 0
         
         # Tries to predict other player's best move and 'steals' it:
         for col in range(self.board.cols):
-            row = self.board.insert(col, 1, trial=True)
+            row = self.board.insert(col, -self.id, trial=True)
             if row != -1:
-                trialscore = self.checker.checkgrid(1, row, col)
+                trialscore = self.checker.checkgrid(-self.id, row, col)
                 #print("trialscore: ", trialscore)
                 if trialscore > maxscore:
                     maxscore = trialscore
@@ -79,26 +83,53 @@ class ComputerDef(Player): #Defensive IA player
         if row != -1:
             return self.checker.check4win(self.id, row, col)
         else:
-            self.play() #Invalid column selected, try again
+            self.play(e) #Invalid column selected, try again
 
 class PlayerDQN(Player):
-    def __init__(self, playernum: int, board: Board, checker: Checker):
+    def __init__(self, playernum: int, board: Board, checker: Checker,repeat:int=1):
         super().__init__(playernum, board, checker)
-        self.dqnagent = DQNAgent(self.board.cols*self.board.rows,self.board.cols,1)
+        self.dqnagent = DQNAgent(self.board.cols*self.board.rows,self.board.cols,repeat)
+        if os.path.isfile("./connectX-weights_deep.h5"):
+            self.dqnagent.load("./connectX-weights_deep.h5") # load prelearned weights
+        self.batch_size = 10
+        self.total_rewards = 0
+        self.all_total_rewards = np.empty(repeat)
+        self.all_avg_rewards = np.empty(repeat)
+        self.previous = None
+        self.previous_action = None
         #self.dqnagent = DQNAgent(42,7,1)
 
 
-    def play(self):
-        #print(self.board.cols,1) ##########################################
-        #print(self.board.cols*self.board.rows)
+    def play(self,e):       
+        previous_state = self.board.grid.copy()
         action = self.dqnagent.act(self.board.grid)
+        self.previous_action = action
         row = self.board.insert(action, self.id)
         if row != -1:
-            return self.checker.check4win(self.id, row, action)
+            (next_state,reward,done)= self.checker.check4win(self.id, row, action)
+            self.previous = next_state.copy()
+            self.dqnagent.memorize(previous_state, action, reward, next_state,done)
+            self.total_rewards += reward
+
+            if len(self.dqnagent.memory) > self.batch_size:
+                self.dqnagent.replay(self.batch_size)
+                self.all_total_rewards[e] = self.total_rewards
+                avg_reward = self.all_total_rewards[max(0, e - 5):e].mean()
+                self.all_avg_rewards[e] = avg_reward
+                if e % 5 == 0 :
+                    self.dqnagent.save("./connectX-weights_deep.h5")
+                    print("episode: {}/{}, epsilon: {:.2f}, average: {:.2f}".format(e, self.dqnagent.episodes, self.dqnagent.epsilon, avg_reward))
+                    self.dqnagent.memory.clear()
+                    self.dqnagent.load("./connectX-weights_deep.h5")
 
         else:
-            self.play() #Invalid column selected, try again
+            self.dqnagent.memorize(self.previous, self.previous_action, -3, self.board.grid,False)
+            self.total_rewards -= 3
+            self.play(e) #Invalid column selected, try again
 
+    def send_reward(self,reward):
+            self.dqnagent.memorize(self.previous, self.previous_action, reward, self.board.grid,True)
+            self.total_rewards += reward
 
 # Deep Q-learning Agent
 class DQNAgent:
@@ -112,12 +143,12 @@ class DQNAgent:
         self.epsilon_min = 0.01
         self.epsilon_decay = exp((log(self.epsilon_min) - log(self.epsilon))/(0.8*episodes)) # reaches epsilon_min after 80% of iterations
         self.model = self._build_model()
+        self.episodes = episodes
     
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
         model.add(Dense(20, input_dim=self.state_size, activation='relu'))
-      
         model.add(Dense(50, activation='relu'))
         model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mse',
@@ -142,8 +173,8 @@ class DQNAgent:
         for state, action, reward, next_state, done in minibatch:
             target = reward
             if not done:
-                target = reward + self.gamma * np.amax(self.model.predict(next_state)[0])
-            target_f = self.model.predict(state)
+                target = reward + self.gamma * np.amax(self.model.predict(next_state.reshape(1,-1))[0])
+            target_f = self.model.predict(state.reshape(1,-1))
             target_f[0][action] = target
             self.model.fit(state.reshape(1,-1), target_f, epochs=1, verbose=0)#################################reshape##########
         if self.epsilon > self.epsilon_min:

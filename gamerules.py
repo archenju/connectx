@@ -7,19 +7,26 @@ class Checker:
         self.cols = board.cols
         #print("Checker created")
 
-    def check4win(self, player: int, row: int, col:int) -> bool:
+    def check4win(self, player: int, row: int, col:int):
         score = self.checkgrid(player, row, col)
+        done = score > 3
+        reward = 0
         if score > 3:
+            reward = 1
             if player == 1:
+                self.board.winner = 1
                 print("Player 1 wins")
             else:
+                self.board.winner = -1
                 print("Player 2 wins")
             self.board.keepplaying = False
-            return True
+            #return True
         if self.board.maxturns == 0:
             self.board.keepplaying = False
             print("DRAW")
-        return False
+
+        return self.board.grid,reward,done
+
     
     def checkgrid(self, player: int, x: int, y: int) -> int:
         score = self.__checkX(x,y,player)
