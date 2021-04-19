@@ -142,18 +142,14 @@ class TestBoard(unittest.TestCase):
 
     def test_diag_down_score3(self):
         board = Board(6)
-        board.insert(0, -1)
-        board.insert(0, -1)
-        board.insert(0, -1)
-        board.insert(0, 1)
         board.insert(1, -1)
         board.insert(1, -1)
         board.insert(1, 1)
-        #board.insert(2, -1)
-        #board.insert(2, 1)
-        #board.insert(3, 1)
+        board.insert(2, -1)
+        board.insert(2, 1)
+        board.insert(3, 1)
         checker = Checker(board)
-        result = checker.checkgrid(1, 0, 3)
+        result = checker.checkgrid(1, 2, 1)
         self.assertEqual(result, 3, "Should be 3")
 
     def test_diag_down_win(self):
