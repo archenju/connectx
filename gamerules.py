@@ -5,7 +5,6 @@ class Checker:
         self.board = board
         self.rows = board.rows
         self.cols = board.cols
-        #print("Checker created")
 
     def check4win(self, player: int, row: int, col:int):
         score = self.checkgrid(player, row, col)
@@ -20,7 +19,7 @@ class Checker:
                 self.board.winner = -1
                 print("Player 2 wins")
             self.board.keepplaying = False
-            #return True
+
         if self.board.maxturns == 0:
             self.board.keepplaying = False
             print("DRAW")
@@ -30,7 +29,6 @@ class Checker:
     
     def checkgrid(self, player: int, x: int, y: int) -> int:
         score = self.__checkX(x,y,player)
-        #if score > 3: return score
         score2 = self.__checkY(x,y,player)
         if score2 > score: score = score2
         score2 = self.__checkDiagUp(x,y,player)
@@ -55,7 +53,6 @@ class Checker:
                 score = score + 1
             else:
                 break
-        #print("scoreY: ", score)
         return score
         
     def __checkX(self, x: int, y: int, player: int) -> int:
@@ -74,7 +71,6 @@ class Checker:
                 score = score + 1
             else:
                 break
-        #print("scoreX: ", score)
         return score
 
     def __checkDiagUp(self, x: int, y: int, player: int) -> int:
@@ -97,7 +93,6 @@ class Checker:
                 score = score +1
             else:
                 break
-        #print("scoreDiag: ", score)
         return score
     
     def __checkDiagDown(self, x: int, y: int, player: int) -> int:
@@ -120,5 +115,4 @@ class Checker:
                 score = score +1
             else:
                 break
-        #print("scoreDiag2: ", score)
         return score        

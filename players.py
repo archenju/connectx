@@ -65,18 +65,16 @@ class ComputerDef(Player): #Defensive IA player
         maxscore = 0
         selectedcolumn = 0
         
-        # Tries to predict other player's best move and 'steals' it:
+        # Tries to predict the other player's best move and 'steal' it:
         for col in range(self.board.cols):
             row = self.board.insert(col, -self.id, trial=True)
             if row != -1:
                 trialscore = self.checker.checkgrid(-self.id, row, col)
-                #print("trialscore: ", trialscore)
                 if trialscore > maxscore:
                     maxscore = trialscore
                     selectedcolumn = col
                 
         col = selectedcolumn
-        #print("CPUscore: ", maxscore)
         if maxscore < 2:
             col = random.randint(0, self.board.cols -1)
         row = self.board.insert(col, self.id)
@@ -99,8 +97,10 @@ class PlayerDQN(Player):
         self.previous_action = None
         #self.dqnagent = DQNAgent(42,7,1)
 
+    def play(self,e):
+        #ouvrir fichier
+        export = open("statistics.txt", "a")
 
-    def play(self,e):       
         previous_state = self.board.grid.copy()
         action = self.dqnagent.act(self.board.grid)
         self.previous_action = action
@@ -108,27 +108,37 @@ class PlayerDQN(Player):
         if row != -1:
             (next_state,reward,done)= self.checker.check4win(self.id, row, action)
             self.previous = next_state.copy()
-            self.dqnagent.memorize(previous_state, action, reward, next_state,done)
+            self.dqnagent.memorize(previous_state, action, reward, next_state.copy(),done)
             self.total_rewards += reward
 
             if len(self.dqnagent.memory) > self.batch_size:
                 self.dqnagent.replay(self.batch_size)
                 self.all_total_rewards[e] = self.total_rewards
-                avg_reward = self.all_total_rewards[max(0, e - 5):e].mean()
+                avg_reward = self.all_total_rewards[max(0, e - 3):e].mean()
                 self.all_avg_rewards[e] = avg_reward
-                if e % 5 == 0 :
+                if e % 3 == 0 :
                     self.dqnagent.save("./connectX-weights_deep.h5")
                     print("episode: {}/{}, epsilon: {:.2f}, average: {:.2f}".format(e, self.dqnagent.episodes, self.dqnagent.epsilon, avg_reward))
+
+                    # Saving stat to file:
+                    export.write("episode: {}/{}, epsilon: {:.2f}, average: {:.2f}\n".format(e, self.dqnagent.episodes, self.dqnagent.epsilon, avg_reward))
+
                     self.dqnagent.memory.clear()
                     self.dqnagent.load("./connectX-weights_deep.h5")
+                export.close
 
         else:
-            self.dqnagent.memorize(self.previous, self.previous_action, -3, self.board.grid,False)
-            self.total_rewards -= 3
-            self.play(e) #Invalid column selected, try again
+            export.close
+            print("Colonne pleine:     ",self.total_rewards)
+            print("Winner :", -self.id)
+            # We penalize this AI hard when trying to play in a full column
+            # Instead of letting it play again (like the 2 other bots), 
+            # we end the current game and set it as that game's loser.
+            self.board.keepplaying = False
+            self.board.winner = -self.id
 
     def send_reward(self,reward):
-            self.dqnagent.memorize(self.previous, self.previous_action, reward, self.board.grid,True)
+            self.dqnagent.memorize(self.previous, self.previous_action, reward, self.board.grid.copy(),True)
             self.total_rewards += reward
 
 # Deep Q-learning Agent
@@ -151,8 +161,16 @@ class DQNAgent:
         model.add(Dense(20, input_dim=self.state_size, activation='relu'))
         model.add(Dense(50, activation='relu'))
         model.add(Dense(self.action_size, activation='linear'))
-        model.compile(loss='mse',
-                      optimizer=Adam(lr = 0.00001))
+        model.compile(loss='mse', optimizer=Adam(lr = 0.00001))
+        return model
+
+    def _build_model2(self):
+        # Second Neural Net for Deep-Q learning Model (Work in progress)
+        model = Sequential()
+        model.add(Dense(20, input_dim=self.state_size, activation='relu'))
+        model.add(Dense(50, activation='relu'))
+        model.add(Dense(self.action_size, activation='linear'))
+        model.compile(loss='mse',optimizer=Adam(lr = 0.00001))
         return model
     
     def memorize(self, state, action, reward, next_state, done):
