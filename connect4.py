@@ -46,8 +46,10 @@ class Connect4:
             self.player1 = ComputerDef(1, self.board, self.checker)
             self.player2 = Human(-1, self.board, self.checker)
         else:
-            self.player1 = ComputerRand(1, self.board, self.checker)
-            self.player2 = PlayerDQN(-1, self.board, self.checker,self.repeat)
+            #self.player1 = ComputerRand(1, self.board, self.checker)
+            #self.player2 = PlayerDQN(-1, self.board, self.checker,self.repeat)
+            self.player2 = ComputerDef(-1, self.board, self.checker)
+            self.player1 = PlayerDQN(1, self.board, self.checker,self.repeat)
 
             
     def startgame(self):

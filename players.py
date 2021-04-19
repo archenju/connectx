@@ -67,7 +67,7 @@ class ComputerDef(Player): #Defensive IA player
         
         # Tries to predict other player's best move and 'steals' it:
         for col in range(self.board.cols):
-            row = self.board.insert(col, 1, trial=True)
+            row = self.board.insert(col, -self.id, trial=True)
             if row != -1:
                 trialscore = self.checker.checkgrid(1, row, col)
                 #print("trialscore: ", trialscore)
@@ -124,6 +124,9 @@ class PlayerDQN(Player):
                     self.dqnagent.load("./connectX-weights_deep.h5")
 
         else:
+            self.dqnagent.memorize(self.previous, self.previous_action, -3, self.board.grid,False)
+            self.total_rewards += -3
+            print("Colonne pleine:     ",self.total_rewards)
             self.play(e) #Invalid column selected, try again
 
     def send_reward(self,reward):

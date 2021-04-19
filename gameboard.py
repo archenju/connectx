@@ -30,6 +30,7 @@ class Board():
         self.grid = np.zeros(shape=(self.rows, self.cols), dtype=int)
         self.keepplaying = True
         self.maxturns = self.rows * self.cols
+        self.winner = 0
                    
     def display(self) -> None:
         for i in range(self.rows-1, -1, -1): # Invert the display so that row 1 is at the bottom
