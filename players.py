@@ -101,7 +101,9 @@ class PlayerDQN(Player):
 
 
     def play(self,e):
-        
+        #ouvrir fichier
+        export = open("statistics.txt", "a")
+
         previous_state = self.board.grid.copy()
         action = self.dqnagent.act(self.board.grid)
         self.previous_action = action
@@ -109,28 +111,38 @@ class PlayerDQN(Player):
         if row != -1:
             (next_state,reward,done)= self.checker.check4win(self.id, row, action)
             self.previous = next_state.copy()
-            self.dqnagent.memorize(previous_state, action, reward, next_state,done)
+            self.dqnagent.memorize(previous_state, action, reward, next_state.copy(),done)
             self.total_rewards += reward
 
             if len(self.dqnagent.memory) > self.batch_size:
                 self.dqnagent.replay(self.batch_size)
                 self.all_total_rewards[e] = self.total_rewards
-                avg_reward = self.all_total_rewards[max(0, e - 5):e].mean()
+                avg_reward = self.all_total_rewards[max(0, e - 3):e].mean()
                 self.all_avg_rewards[e] = avg_reward
-                if e % 5 == 0 :
+                if e % 3 == 0 :
                     self.dqnagent.save("./connectX-weights_deep.h5")
                     print("episode: {}/{}, epsilon: {:.2f}, average: {:.2f}".format(e, self.dqnagent.episodes, self.dqnagent.epsilon, avg_reward))
+
+                    #ecrire fichier ########################################################
+                    export.write("episode: {}/{}, epsilon: {:.2f}, average: {:.2f}\n".format(e, self.dqnagent.episodes, self.dqnagent.epsilon, avg_reward))
+
                     self.dqnagent.memory.clear()
                     self.dqnagent.load("./connectX-weights_deep.h5")
+                    #fermer fichier
+                    export.close
 
         else:
-            self.dqnagent.memorize(self.previous, self.previous_action, -3, self.board.grid,False)
-            self.total_rewards -= 3
+            #self.dqnagent.memorize(previous_state, self.previous_action, -3, self.board.grid.copy(),False)
+            #self.total_rewards -= 3
+            export.close
             print("Colonne pleine:     ",self.total_rewards)
-            self.play(e) #Invalid column selected, try again
+            print("Winner :", -self.id)
+            #self.play(e) #Invalid column selected, try again
+            self.board.keepplaying = False
+            self.board.winner = -self.id
 
     def send_reward(self,reward):
-            self.dqnagent.memorize(self.previous, self.previous_action, reward, self.board.grid,True)
+            self.dqnagent.memorize(self.previous, self.previous_action, reward, self.board.grid.copy(),True)
             self.total_rewards += reward
 
 # Deep Q-learning Agent
@@ -155,6 +167,15 @@ class DQNAgent:
         model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mse',
                       optimizer=Adam(lr = 0.00001))
+        return model
+
+    def _build_model2(self):
+        # Neural Net for Deep-Q learning Model
+        model = Sequential()
+        model.add(Dense(20, input_dim=self.state_size, activation='relu'))
+        model.add(Dense(50, activation='relu'))
+        model.add(Dense(self.action_size, activation='linear'))
+        model.compile(loss='mse',optimizer=Adam(lr = 0.00001))
         return model
     
     def memorize(self, state, action, reward, next_state, done):

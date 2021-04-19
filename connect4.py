@@ -46,9 +46,9 @@ class Connect4:
             self.player1 = ComputerDef(1, self.board, self.checker)
             self.player2 = Human(-1, self.board, self.checker)
         else:
-            #self.player1 = ComputerRand(1, self.board, self.checker)
-            #self.player2 = PlayerDQN(-1, self.board, self.checker,self.repeat)
             self.player2 = ComputerDef(-1, self.board, self.checker)
+            #self.player2 = PlayerDQN(-1, self.board, self.checker,self.repeat)
+            #self.player1 = ComputerRand(1, self.board, self.checker)
             self.player1 = PlayerDQN(1, self.board, self.checker,self.repeat)
 
             
@@ -68,9 +68,9 @@ class Connect4:
                     print("Player 2")
                     self.player2.play(e)
                     self.board.display()
-                else:
-                    if self.board.winner ==1:
-                        self.player2.send_reward(-1)
+              #  else:
+            if self.board.winner ==1:
+                self.player2.send_reward(-1)
 
             if self.board.winner == -1:
                 self.player1.send_reward(-1)
