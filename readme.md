@@ -6,10 +6,10 @@ A small application to play connect 4 from the command line
 
 * First posiional argument: number of columns in the game
 * --mode: type of game, where
-** hxh: human vs human (default)
-** hxr: human vs bot
-** rxh: bot vs human
-** rxr: bot vs bot
+    * hxh: human vs human (default)
+    * hxr: human vs bot
+    * rxh: bot vs human
+    * rxr: bot vs bot
 * --repeat: number of games to play (default: 1)
 
 # Example:
