@@ -10,6 +10,8 @@ class TestBoard(unittest.TestCase):
         self.assertEqual(board.cols, 6, "Should be 6")
         self.assertEqual(board.rows, 6, "Should be 6")
         self.assertEqual(board.grid.shape, (6,6), "Should be (6,6)")
+        self.assertEqual(board.winner, 0, "Should be 0")
+        self.assertEqual(board.maxturns, 36, "Should be 36")
 
     def test_play_once(self):
         board = Board(6)

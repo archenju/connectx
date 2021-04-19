@@ -69,7 +69,7 @@ class ComputerDef(Player): #Defensive IA player
         for col in range(self.board.cols):
             row = self.board.insert(col, -self.id, trial=True)
             if row != -1:
-                trialscore = self.checker.checkgrid(1, row, col)
+                trialscore = self.checker.checkgrid(-self.id, row, col)
                 #print("trialscore: ", trialscore)
                 if trialscore > maxscore:
                     maxscore = trialscore
@@ -125,7 +125,7 @@ class PlayerDQN(Player):
 
         else:
             self.dqnagent.memorize(self.previous, self.previous_action, -3, self.board.grid,False)
-            self.total_rewards += -3
+            self.total_rewards -= 3
             print("Colonne pleine:     ",self.total_rewards)
             self.play(e) #Invalid column selected, try again
 
